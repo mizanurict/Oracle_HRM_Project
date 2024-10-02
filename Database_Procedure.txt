@@ -1,0 +1,101 @@
+CREATE OR REPLACE PROCEDURE SHAWON.manage_attendance(
+    p_employee_id IN emp_attendance_information.employee_id%TYPE,
+    p_attendance_date IN emp_attendance_information.attendance_date%TYPE,
+    p_time_in IN emp_attendance_information.time_in%TYPE,
+    p_time_out IN emp_attendance_information.time_out%TYPE
+) AS
+    v_count NUMBER;
+BEGIN
+    -- চেক করুন যে ওই employee_id এবং attendance_date একই রয়েছে কিনা
+    SELECT COUNT(*)
+    INTO v_count
+    FROM emp_attendance_information
+    WHERE employee_id = p_employee_id
+      AND attendance_date = p_attendance_date;
+
+    IF v_count = 0 THEN
+        -- যদি রেকর্ড না থাকে, তাহলে নতুন রেকর্ড ইনসার্ট করুন
+        INSERT INTO emp_attendance_information (employee_id, attendance_date, time_in, time_out)
+        VALUES (p_employee_id, p_attendance_date, p_time_in, p_time_out);
+    ELSE
+        -- যদি রেকর্ড থাকে, তাহলে আপডেট করুন
+        UPDATE emp_attendance_information
+        SET time_in = p_time_in,
+            time_out = p_time_out
+        WHERE employee_id = p_employee_id
+          AND attendance_date = p_attendance_date;
+    END IF;
+
+    COMMIT; -- পরিবর্তনগুলো সংরক্ষণ করুন
+END;
+/
+
+
+-----------------------------------
+
+CREATE OR REPLACE PROCEDURE SHAWON.insert_pf_data2(
+    p_start_date IN DATE,
+    p_end_date   IN DATE
+) IS
+    v_count NUMBER;
+BEGIN
+    -- Loop through all employees who are not deleted
+    FOR pf_record IN (SELECT emp_code FROM emp_basic_information WHERE is_deleted = 0) LOOP
+        -- Loop through the date range
+        FOR day_counter IN 0..(p_end_date - p_start_date) LOOP
+            DECLARE
+                v_date DATE := p_start_date + day_counter;
+            BEGIN
+                -- Check if there is an attendance record for the employee on the given date
+                SELECT COUNT(*)
+                INTO v_count
+                FROM emp_attendance_information
+                WHERE employee_id = pf_record.emp_code 
+                AND attendance_date = v_date;
+
+                -- If no attendance record exists, insert a new one
+                IF v_count = 0 THEN
+                    INSERT INTO emp_attendance_information (employee_id, attendance_date)
+                    VALUES (pf_record.emp_code, v_date);
+                END IF;
+
+                -- Check if the date is a Friday (day of the week = 6)
+                IF TO_CHAR(v_date, 'D') = '6' THEN
+                    -- Update the record to set absence_reason as 'Holiday'
+                    UPDATE emp_attendance_information
+                    SET absence_reason = 'Holiday'
+                    WHERE employee_id = pf_record.emp_code
+                      AND attendance_date = v_date;
+                END IF;
+            END;
+        END LOOP;
+    END LOOP;
+
+    COMMIT;
+END;
+/
+
+------------------------------------------
+CREATE OR REPLACE PROCEDURE SHAWON.declare_general_holiday2 (
+    p_holiday_date DATE,
+    p_holiday_reason VARCHAR2
+) IS
+BEGIN
+    -- Use MERGE to insert or update the holiday for all employees
+    FOR emp_record IN (SELECT emp_code FROM emp_basic_information WHERE is_deleted = 0) LOOP
+        MERGE INTO emp_attendance_information target
+        USING (SELECT emp_record.emp_code AS employee_id, p_holiday_date AS attendance_date FROM dual) source
+        ON (target.employee_id = source.employee_id AND target.attendance_date = source.attendance_date)
+        WHEN MATCHED THEN
+            -- Update if the employee_id and attendance_date already exist
+            UPDATE SET target.absence_reason = p_holiday_reason
+        WHEN NOT MATCHED THEN
+            -- Insert if the employee_id and attendance_date do not exist
+            INSERT (employee_id, attendance_date, absence_reason)
+            VALUES (emp_record.emp_code, p_holiday_date, p_holiday_reason);
+    END LOOP;
+
+    -- Commit the transaction
+    COMMIT;
+END;
+/
