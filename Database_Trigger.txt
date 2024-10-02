@@ -47,30 +47,42 @@ END;
 /
 
 ---------------------------
-CREATE OR REPLACE TRIGGER SHAWON.TRG_LEAVE_INSERT
+CREATE OR REPLACE TRIGGER TRG_LEAVE_INSERT2
 AFTER INSERT OR UPDATE
-ON SHAWON.LEAVE_APPROVED
+ON LEAVE_APPROVED
 REFERENCING NEW AS NEW OLD AS OLD
 FOR EACH ROW
 DECLARE
-    current_day DATE; -- A variable to hold each date in the range
+    current_day DATE; -- প্রতিটি দিনের জন্য একটি ভ্যারিয়েবল
 BEGIN
-    -- Check if the status is 'Approved'
+    -- চেক করুন যে স্ট্যাটাস 'Approved' কি না
     IF :NEW.status = 'Approved' THEN
-        -- Initialize the current_day to start_date
+        -- current_day কে start_date দিয়ে শুরু করুন
         current_day := :NEW.start_date;
         
-        -- Loop through each day between start_date and end_date
+        -- start_date থেকে end_date পর্যন্ত প্রতিটি দিনের জন্য লুপ করুন
         WHILE current_day <= :NEW.end_date LOOP
-            INSERT INTO emp_attendance_information (employee_id, attendance_date, absence_reason, leave_id)
-            VALUES (:NEW.id, current_day, :NEW.leave_type, :NEW.leave_id);
+            -- MERGE স্টেটমেন্ট ব্যবহার করে একই employee_id এবং attendance_date এর জন্য রেকর্ড আপডেট বা নতুন রেকর্ড ইনসার্ট করুন
+            MERGE INTO emp_attendance_information eai
+            USING dual
+            ON (eai.employee_id = :NEW.id AND eai.attendance_date = current_day)
+            WHEN MATCHED THEN
+                -- যদি employee_id এবং attendance_date একই হয়, রেকর্ড আপডেট করুন
+                UPDATE SET
+                    eai.absence_reason = :NEW.leave_type,
+                    eai.leave_id = :NEW.leave_id
+            WHEN NOT MATCHED THEN
+                -- যদি employee_id এবং attendance_date একই না হয়, নতুন রেকর্ড ইনসার্ট করুন
+                INSERT (employee_id, attendance_date, absence_reason, leave_id)
+                VALUES (:NEW.id, current_day, :NEW.leave_type, :NEW.leave_id);
             
-            -- Increment the date by 1 day
+            -- তারিখ ১ দিন বাড়ান
             current_day := current_day + 1;
         END LOOP;
     END IF;
 END;
 /
+
 
 
 ---------------------------------
