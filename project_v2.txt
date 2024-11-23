@@ -1,0 +1,306 @@
+CREATE TABLE job_location (
+	location_id  	varchar2(50) primary key,  ---JLD-201
+	NSM		varchar2(200),
+	branch_wing 	varchar2(200),
+	region 		varchar2(200),
+	territory 		varchar2(200)
+);
+
+CREATE TABLE designation (
+	designation_id 		varchar2(50) Primary key, --- DGD-301
+	designation_name		varchar2(100)
+);
+
+CREATE TABLE department (
+	department_id		varchar2(50) Primary key, --- DPD-401
+	department_name		varchar2(100),
+	sub_department		varchar2(100),
+	section			varchar2(100)
+);
+
+CREATE TABLE address (
+	address_id 	varchar2(50) primary key, ----ARD-5001
+	country		varchar2(200),
+	division		varchar2(200),
+	district		varchar2(200),
+	thana		varchar2(200),  ----
+	postoffice		varchar2(200),
+	postcode		number
+);
+
+CREATE TABLE shift (
+	shift_id			varchar2(50) primary key, ----SFD-601
+	shift_name		varchar2(100),
+	shift_start		date,
+	shift_end			date,
+	grace_min		number,
+	lunchbreak_start		date,
+	lunchbreak_end		date,
+	lunchbreak_duration_min	number,	
+	shift_duration_hours	number,
+	remarks			varchar2(100)
+);
+
+CREATE TABLE payscale (
+	payscale_id	varchar2(50) primary key, ---PSD-701
+	payscale		varchar2(200),
+	paygrade		varchar2(100),
+	basic		number(20,2),
+	houserent	number(20,2),
+	medical		number(20,2),
+	conveyance	number(20,2),
+	entertainment	number(20,2),
+	city_allowance	number(20,2),
+	others		number(20,2),
+	gross		number(20,2)
+);
+
+CREATE TABLE leave (
+	leave_id  		Varchar2(50) primary key, ---LD-801
+	annual		number,  --16
+	casual		number,  ---10
+	sick		number,  ---14
+	Special		number,  ---100
+	forced_a		number, --100
+	lwp		number, 	---300
+	tour		number,	---300
+	bodly_d		number, --100
+	holiday		number	--52
+);
+
+CREATE TABLE leave_application (
+ 	lv_application_id 	varchar2(50) primary key, ---LAD-120001
+	Employee_id 	varchar2(50), ----foreign key (employee)
+	Lv_type 		varchar2(50), 
+	Lv_apply_date 	date,
+	Lv_start 		date,
+	Lv_end 		date,
+	Lv_days 		number
+);
+
+CREATE TABLE leave_approved (
+	Lv_approved_id 		varchar2(50) primary key,  ---LAVD-130001
+	Lv_application_id 		varchar2(50), ---foreign key (leave_application)
+	lv_apv_date 		date default sysdate
+); [approved korle leave balance kome jabe]
+
+
+CREATE TABLE salary_increment (
+	inrement_id  	varchar2(50) primary key,  ---SID-90001
+	employee_id	varchar2(50), ---foreign key (employee)
+	designation_id	varchar2(50), --foreign key (employee)
+	payscale_id	varchar2(50), --foreign key (emp_salary_account)
+	increment_date	date
+);		
+	
+
+CREATE TABLE employee (
+	employee_id 	varchar2(50) primary key,  ---PF-10001
+	emp_name	varchar2(150),
+	designation_id 	varchar2(50), ---foreign key (designation)
+	dob		date,
+	age		varchar2(100),  ---auto from dob field
+	personal_phone	varchar2(50),
+	official_phone	varchar2(50),
+	personal_email	varchar2(100),
+	official_email	varchar2(100),
+	service_length	varchar2(100),
+	image		blob,
+	is_deleted	number default 0,
+	created_at	date default sysdate,
+	last_upadted	date	
+);
+
+CREATE TABLE emp_salary_account (
+	employee_id	varchar2(50), ---foreign key (employee)
+	payscale_id	varchar2(50), ---foreign key (payscale)
+	bank_name	varchar2(100),
+	payment_mode	varchar2(100),
+	account_number	varchar2(50)
+);	
+	
+
+CREATE TABLE emp_payroll (
+	payroll_id		varchar2(50) primary key,  ----PRD-1000001
+	employee_id 	varchar2(50),  ---foreign key (employee)
+	payscale_id	varchar2(50), ---foreign key (emp_salary_account)
+	city_allow		number(20,2),
+	ot_amount	number(20,2),
+	holyday_allow	number(20,2),
+	ta_da		number(20,2),
+	arrear		number(20,2),
+	motorbike	number(20,2),
+	others_allow	number(20,2),
+	total_allowance	number(20,2),
+	total_earnings	number(20,2),
+	absent_deduc	number(20,2),  ---per day gross
+	pf_fund		number(20,2), ---2.5% of Basic
+	tax		number(20,2),
+	forced-absent	number(20,2),  --per day gross
+	lwp_deduc	number(20,20),  --per day gross
+	late_join		number(20,2), --per day gross
+	late_in		number(20,2),  ---per day gross
+	early_out		number(20,2),  ---per day gross
+	one_time_pass	number(20,2), --per day gross
+	mobile_bill_adj	number(20,2),  --- 320tk
+	loan		number(20,2),	
+	salary_adv	number(20,2),
+	purchase_deduc	number(20,2),
+	stamp		number(20,2),   ---10tk
+	total_deduc	number(20,2),
+	net_amount	number(20,2),
+	created_at	date
+);	
+
+
+CREATE TABLE emp_employment (
+	employee_id 	varchar2(50),  ---foreign key (employee)
+	type		varchar2(100),
+	doj		date,
+	location_id	varchar2(50), ---foreign key (job_location) 
+	department_id	varchar2(50), --- foreign key (department)
+	shift_id		varchar2(50), ---foreign key(shift)
+	status		varchar2(50)
+);
+
+
+CREATE TABLE emp_personal (
+	employee_id 	varchar2(50),  ---foreign key (employee)
+	father		varchar2(100),
+	mother		varchar2(100),
+	marital_status	varchar2(50),
+	spouse 		varchar2(100),
+	children		number,
+	religion		varchar2(50),
+	nationality	varchar2(100),
+	gender		varchar2(50),
+	blood_group	varchar2(20),
+	weight		varchar2(20),
+	height		varchar2(20)
+);
+
+CERATE TABLE emp_address (
+	employee_id 	varchar2(50),  ---foreign key (employee)
+	address_id	varchar2(50), ---foreign key (address)
+	country		varchar2(200),
+	division		varchar2(200),
+	district		varchar2(200),
+	thana		varchar2(200),
+	postoffice		varchar2(200),
+	postcode		number,
+	union		varchar2(200),
+	village		varchar2(200),
+	address_id	varchar2(50), ---foreign key (address)
+	p_country	varchar2(200),
+	p_division		varchar2(200),
+	p_district		varchar2(200),
+	p_thana		varchar2(200),
+	p_postoffice	varchar2(200),
+	p_postcode	number,
+	p_union		varchar2(200),
+	p_village		varchar2(200)
+);
+
+
+CREATE TABLE customers (
+	Customer_id 	varchar2(50) primary key ---KM10000001
+	Customer_name 	varchar2(200),
+	Type 		varchar2(50),
+	Category  	number, ----12%, 10%, 14%, 8% cashdb (12%), cashdb(10%)
+	Line 		varchar2(20),
+	location_id 	varchar2(50), ---foreign key (job_location) territory name
+	Phone 		varchar2 (50),
+	Address 		varchar2(300)
+);
+
+CREATE TABLE credit_limit (
+	Credit_id 		varchar2(50) primary key, ---CLD-14001
+	Customer_id 	varchar2(50), --- foreign key (customers)
+	Balance 		number(20,2),
+	Created_at 	date default sysdate 
+);
+
+CREATE TABLE product_category (
+	Category_id 	varchar2(50) primary key, ---PC-15001
+	Category_1 	varchar2(100), 
+	Category_2 	varchar2(100),
+	Category_3 	varchar2(100),
+	Category_4 	varchar2(100), 
+	Category_5 	varchar2(100),
+	Category_6 	varchar2(100),
+	Category_7 	varchar2(100)
+);
+
+CREATE TABLE products (
+	Product_id 	varchar2(50) primary key, ---PC, RC, AL-180001
+	Product_name 	varchar2(200),
+	Category_id 	varchar2(50), ---Foreign key (product_category)
+	Price 		number (20,2)
+);
+
+CREATE TABLE inventory (
+	product_id 	varchar2 (50), ---foreign key (products)
+	Stock_in 		number, ---manual entry
+	Stock_out 	number, ---auto from delivery
+	Stock_remain 	number,  ---auto calculated 
+	Purchase_price 	number (20,2),
+	Created_at 	date default sysdate
+);
+
+CREATE TABLE sales_order_customer (
+	Order_id 		varchar2(50) primary key --SO-190001
+	Order_date 	date default sysdate, 
+	Customer_id 	varchar2(50), ---Foreign key (customers) [code, name, branch, sales_man, blance, phone, address]
+	total_qty 		number, 
+	gross_total 	number(20,2),
+	Gd_amount  	number (20,2), --auto customers wise discussion %
+	Net_total 	number(20,2),
+	status		varchar2(20) ---Pending
+);
+
+CREATE TABLE sales_order_Product (
+	Order_id 		varchar2(50), ---foreign key(sales_order_customer)
+	Product_id 	varchar2 (50), ---foreign key(products)
+	Unit_price 	number(20,2), --auto
+	Qty 		number, ---entry
+	Line_total 	number (20,2)
+);
+
+CREATE TABLE sales_delivery_customer (
+	Delivery_id 	varchar2(50) primary key --SD-200001
+	Order_id 		varchar2(50), foreign key (sales_order_customers)
+	Delivery_date 	date default sysdate, 
+	Customer_id 	varchar2(50), ---Foreign key (sales_Order_customer)
+	total_qty 		number,
+	status		varchar2(20) ---Pending
+);
+
+CREATE TABLE sales_delivery_Product (
+	Delivery_id 	varchar2(50), ---foreign key(sales_delivery_customer)
+	Product_id 	varchar2 (50), ---foreign key(products)
+	Unit_price 	number(20,2), --auto
+	Qty 		number, ---entry
+	Line_total 	number (20,2)
+);
+
+
+CREATE TABLE sales_invoice_customer (
+	invoice_id 	varchar2(50) primary key --SI-190001
+	Delivery_id 	varchar2(50), ---foreign key(sales_delivery_customer)
+	invoice_date 	date default sysdate, 
+	Customer_id 	varchar2(50), ---Foreign key (sales_delivery_customer)
+	total_qty 		number, 
+	gross_total 	number(20,2),
+	Gd_amount  	number (20,2), --auto customers wise discussion %
+	special_dis	number(20,2),
+	Net_total 	number(20,2),
+	status		varchar2(20) ---Completed
+);
+
+CREATE TABLE sales_invoice_Product (
+	invoice_id 	varchar2(50), ---foreign key(sales_invoice_customer)
+	Product_id 	varchar2 (50), ---foreign key(sales_delivery_product)
+	Unit_price 	number(20,2), --auto
+	Qty 		number, ---entry
+	Line_total 	number (20,2)
+);

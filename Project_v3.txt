@@ -1,0 +1,228 @@
+-- Job Location Table
+CREATE TABLE job_location (
+    location_id   varchar2(50) PRIMARY KEY,  -- JLD-201
+    NSM          varchar2(200),
+    branch_wing  varchar2(200),
+    region       varchar2(200),
+    territory    varchar2(200)
+);
+
+-- Designation Table
+CREATE TABLE designation (
+    designation_id    varchar2(50) PRIMARY KEY, -- DGD-301
+    designation_name  varchar2(100)
+);
+
+-- Department Table
+CREATE TABLE department (
+    department_id     varchar2(50) PRIMARY KEY, -- DPD-401
+    department_name   varchar2(100),
+    sub_department    varchar2(100),
+    section           varchar2(100)
+);
+
+-- Address Table
+CREATE TABLE address (
+    address_id    varchar2(50) PRIMARY KEY,  -- ARD-5001
+    country       varchar2(200),
+    division      varchar2(200),
+    district      varchar2(200),
+    thana         varchar2(200),
+    postoffice    varchar2(200),
+    postcode      number
+);
+
+-- Shift Table
+CREATE TABLE shift (
+    shift_id          varchar2(50) PRIMARY KEY, -- SFD-601
+    shift_name        varchar2(100),
+    shift_start       date,
+    shift_end         date,
+    grace_min         number,
+    lunchbreak_start  date,
+    lunchbreak_end    date,
+    lunchbreak_duration_min number,    
+    shift_duration_hours    number,
+    remarks           varchar2(100)
+);
+
+-- Payscale Table
+CREATE TABLE payscale (
+    payscale_id   varchar2(50) PRIMARY KEY, -- PSD-701
+    payscale      varchar2(200),
+    paygrade      varchar2(100),
+    basic         number(20,2),
+    houserent     number(20,2),
+    medical       number(20,2),
+    conveyance    number(20,2),
+    entertainment number(20,2),
+    city_allowance number(20,2),
+    others        number(20,2),
+    gross         number(20,2)
+);
+
+-- Leave Table
+CREATE TABLE leave (
+    leave_id    varchar2(50) PRIMARY KEY, -- LD-801
+    annual      number,  --16
+    casual      number,  --10
+    sick        number,  --14
+    Special     number,  --100
+    forced_a    number, --100
+    lwp         number, --300
+    tour        number, --300
+    bodily_d    number, --100
+    holiday     number  --52
+);
+
+-- Employee Table
+CREATE TABLE employee (
+    employee_id     varchar2(50) PRIMARY KEY, -- PF-10001
+    emp_name        varchar2(150),
+    designation_id  varchar2(50), -- foreign key (designation)
+    dob             date,
+    age             varchar2(100), -- auto from dob field
+    personal_phone  varchar2(50),
+    official_phone  varchar2(50),
+    personal_email  varchar2(100),
+    official_email  varchar2(100),
+    service_length  varchar2(100),
+    image           blob,
+    is_deleted      number DEFAULT 0,
+    created_at      date DEFAULT sysdate,
+    last_updated    date,
+    FOREIGN KEY (designation_id) REFERENCES designation(designation_id)
+);
+
+-- Emp Employment Table (to manage employee job info)
+CREATE TABLE emp_employment (
+    employee_id    varchar2(50), -- foreign key (employee)
+    type           varchar2(100),
+    doj            date,
+    location_id    varchar2(50), -- foreign key (job_location)
+    department_id  varchar2(50), -- foreign key (department)
+    shift_id       varchar2(50), -- foreign key (shift)
+    status         varchar2(50),
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id),
+    FOREIGN KEY (location_id) REFERENCES job_location(location_id),
+    FOREIGN KEY (department_id) REFERENCES department(department_id),
+    FOREIGN KEY (shift_id) REFERENCES shift(shift_id)
+);
+
+-- Emp Address Table (employee address and contact info)
+CREATE TABLE emp_address (
+    employee_id    varchar2(50), -- foreign key (employee)
+    address_id     varchar2(50), -- foreign key (address)
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id),
+    FOREIGN KEY (address_id) REFERENCES address(address_id)
+);
+
+-- Emp Salary Account Table
+CREATE TABLE emp_salary_account (
+    employee_id     varchar2(50), -- foreign key (employee)
+    payscale_id     varchar2(50), -- foreign key (payscale)
+    bank_name       varchar2(100),
+    payment_mode    varchar2(100),
+    account_number  varchar2(50),
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id),
+    FOREIGN KEY (payscale_id) REFERENCES payscale(payscale_id)
+);
+
+-- Emp Payroll Table (employee payroll details)
+CREATE TABLE emp_payroll (
+    payroll_id       varchar2(50) PRIMARY KEY, -- PRD-1000001
+    employee_id      varchar2(50), -- foreign key (employee)
+    payscale_id      varchar2(50), -- foreign key (emp_salary_account)
+    city_allow       number(20,2),
+    ot_amount        number(20,2),
+    holiday_allow    number(20,2),
+    ta_da            number(20,2),
+    arrear           number(20,2),
+    motorbike        number(20,2),
+    others_allow     number(20,2),
+    total_allowance  number(20,2),
+    total_earnings   number(20,2),
+    absent_deduc     number(20,2), -- per day gross
+    pf_fund          number(20,2), -- 2.5% of Basic
+    tax              number(20,2),
+    forced_absent    number(20,2), -- per day gross
+    lwp_deduc        number(20,2), -- per day gross
+    late_join        number(20,2), -- per day gross
+    late_in          number(20,2), -- per day gross
+    early_out        number(20,2), -- per day gross
+    one_time_pass    number(20,2), -- per day gross
+    mobile_bill_adj  number(20,2), -- 320tk
+    loan             number(20,2),
+    salary_adv       number(20,2),
+    purchase_deduc   number(20,2),
+    stamp            number(20,2), -- 10tk
+    total_deduc      number(20,2),
+    net_amount       number(20,2),
+    created_at       date,
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id),
+    FOREIGN KEY (payscale_id) REFERENCES emp_salary_account(payscale_id)
+);
+
+-- Leave Application Table
+CREATE TABLE leave_application (
+    lv_application_id    varchar2(50) PRIMARY KEY, -- LAD-120001
+    employee_id          varchar2(50), -- foreign key (employee)
+    lv_type             varchar2(50), 
+    lv_apply_date       date,
+    lv_start            date,
+    lv_end              date,
+    lv_days             number
+);
+
+-- Leave Approved Table
+CREATE TABLE leave_approved (
+    lv_approved_id       varchar2(50) PRIMARY KEY, -- LAVD-130001
+    lv_application_id    varchar2(50), -- foreign key (leave_application)
+    lv_apv_date          date DEFAULT sysdate,
+    FOREIGN KEY (lv_application_id) REFERENCES leave_application(lv_application_id)
+);
+
+-- Salary Increment Table (For increment history)
+CREATE TABLE salary_increment (
+    increment_id  varchar2(50) PRIMARY KEY, -- SID-90001
+    employee_id   varchar2(50), -- foreign key (employee)
+    designation_id varchar2(50), -- foreign key (designation)
+    payscale_id   varchar2(50), -- foreign key (emp_salary_account)
+    increment_date date,
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id),
+    FOREIGN KEY (designation_id) REFERENCES designation(designation_id),
+    FOREIGN KEY (payscale_id) REFERENCES payscale(payscale_id)
+);
+
+-- Customer Table
+CREATE TABLE customers (
+    customer_id    varchar2(50) PRIMARY KEY, -- KM10000001
+    customer_name  varchar2(200),
+    customer_email varchar2(100),
+    phone_number   varchar2(50),
+    customer_type  varchar2(50),
+    date_of_birth  date,
+    company_name   varchar2(100),
+    company_address varchar2(200)
+);
+
+-- Customer Order Table
+CREATE TABLE customer_order (
+    order_id        varchar2(50) PRIMARY KEY, -- ORD-201
+    customer_id     varchar2(50), -- foreign key (customers)
+    order_date      date,
+    delivery_date   date,
+    delivery_status varchar2(100),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+-- Customer Order Product Table
+CREATE TABLE customer_order_product (
+    order_product_id varchar2(50) PRIMARY KEY, -- OPI-205
+    order_id         varchar2(50), -- foreign key (customer_order)
+    product_id       varchar2(50), -- foreign key (product)
+    quantity         number,
+    unit_price       number(20,2),
+    total_price      number(20,2),
+    FOREIGN KEY (order_id) REFERENCES customer_order(order_id)
+);
